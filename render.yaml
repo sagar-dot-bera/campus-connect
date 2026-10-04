@@ -1,0 +1,73 @@
+# Render Blueprint: deploys the gateway and the three services as Docker web services.
+# Render > New > Blueprint > pick this repo. Values marked `sync: false` are asked for
+# in the dashboard during setup (secrets and URLs are never committed).
+#
+# Free plan limitation: Render's free tier has no private services, and free instances
+# can't receive private-network traffic. So each backend also gets a public
+# *.onrender.com URL, and the gateway and Order Service reach them via those URLs
+# (configured below as the service registry). See README section 6 (limitations).
+
+services:
+  - type: web
+    name: campusconnect-gateway
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerContext: ./api-gateway
+    dockerfilePath: ./api-gateway/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      # Service registry: the public URLs Render assigns to the three services below,
+      # e.g. https://campusconnect-user-service.onrender.com (no trailing slash).
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false
+      - key: ORDER_SERVICE_URL
+        sync: false
+      # Free instances sleep after 15 min idle and take ~50 s to wake. A cold
+      # /orders call can wake order, user and product in turn.
+      - key: GATEWAY_PROXY_TIMEOUT_MS
+        value: "120000"
+
+  - type: web
+    name: campusconnect-user-service
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerContext: ./user-service
+    dockerfilePath: ./user-service/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MONGODB_URI # mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/userdb
+        sync: false
+
+  - type: web
+    name: campusconnect-product-service
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerContext: ./product-service
+    dockerfilePath: ./product-service/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MONGODB_URI # mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/productdb
+        sync: false
+
+  - type: web
+    name: campusconnect-order-service
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerContext: ./order-service
+    dockerfilePath: ./order-service/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: MONGODB_URI # mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/orderdb
+        sync: false
+      - key: USER_SERVICE_URL
+        sync: false
+      - key: PRODUCT_SERVICE_URL
+        sync: false
+      - key: DEPENDENCY_TIMEOUT_MS
+        value: "60000"

@@ -1,0 +1,160 @@
+name: campusconnect
+
+# Every value in ${...} can be overridden from the shell or the root .env file
+# (see .env.example). Defaults match the ports in the lab architecture.
+#
+# Lab 7: api-gateway is the only service with a published port. User, Product and
+# Order are reachable only from inside campus-network.
+
+services:
+  # ---------------- API Gateway: the single public entry point ----------------
+  api-gateway:
+    build: ./api-gateway
+    image: api-gateway:v1
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "${GATEWAY_PORT:-8080}:${GATEWAY_PORT:-8080}"
+    environment:
+      PORT: ${GATEWAY_PORT:-8080}
+      # Service registry. The gateway builds its routing table from these values.
+      USER_SERVICE_URL: ${USER_SERVICE_URL:-http://user-service:3001}
+      PRODUCT_SERVICE_URL: ${PRODUCT_SERVICE_URL:-http://product-service:3002}
+      ORDER_SERVICE_URL: ${ORDER_SERVICE_URL:-http://order-service:3003}
+      GATEWAY_PROXY_TIMEOUT_MS: ${GATEWAY_PROXY_TIMEOUT_MS:-10000}
+    # Backends are not startup dependencies: if one is down the gateway still
+    # starts and answers 503 for that service's routes.
+    networks:
+      - campus-network
+    healthcheck:
+      test: wget -qO- http://localhost:${GATEWAY_PORT:-8080}/health || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ---------------- User Service + its own database ----------------
+  user-db:
+    image: mongo:7
+    container_name: user-db
+    restart: unless-stopped
+    volumes:
+      - user-data:/data/db
+    networks:
+      - campus-network
+    healthcheck:
+      test: mongosh --quiet --eval "db.adminCommand('ping')"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  user-service:
+    build: ./user-service
+    image: user-service:v1
+    container_name: user-service
+    restart: unless-stopped
+    # No "ports:": reachable only inside campus-network, i.e. through the gateway
+    expose:
+      - "${USER_SERVICE_PORT:-3001}"
+    environment:
+      PORT: ${USER_SERVICE_PORT:-3001}
+      MONGODB_URI: ${USER_MONGODB_URI:-mongodb://user-db:27017/userdb}
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - campus-network
+    healthcheck:
+      test: wget -qO- http://localhost:${USER_SERVICE_PORT:-3001}/health || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ---------------- Product Service + its own database ----------------
+  product-db:
+    image: mongo:7
+    container_name: product-db
+    restart: unless-stopped
+    volumes:
+      - product-data:/data/db
+    networks:
+      - campus-network
+    healthcheck:
+      test: mongosh --quiet --eval "db.adminCommand('ping')"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  product-service:
+    build: ./product-service
+    image: product-service:v1
+    container_name: product-service
+    restart: unless-stopped
+    # No "ports:": reachable only inside campus-network, i.e. through the gateway
+    expose:
+      - "${PRODUCT_SERVICE_PORT:-3002}"
+    environment:
+      PORT: ${PRODUCT_SERVICE_PORT:-3002}
+      MONGODB_URI: ${PRODUCT_MONGODB_URI:-mongodb://product-db:27017/productdb}
+    depends_on:
+      product-db:
+        condition: service_healthy
+    networks:
+      - campus-network
+    healthcheck:
+      test: wget -qO- http://localhost:${PRODUCT_SERVICE_PORT:-3002}/health || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ---------------- Order Service + its own database ----------------
+  order-db:
+    image: mongo:7
+    container_name: order-db
+    restart: unless-stopped
+    volumes:
+      - order-data:/data/db
+    networks:
+      - campus-network
+    healthcheck:
+      test: mongosh --quiet --eval "db.adminCommand('ping')"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  order-service:
+    build: ./order-service
+    image: order-service:v1
+    container_name: order-service
+    restart: unless-stopped
+    # No "ports:": reachable only inside campus-network, i.e. through the gateway
+    expose:
+      - "${ORDER_SERVICE_PORT:-3003}"
+    environment:
+      PORT: ${ORDER_SERVICE_PORT:-3003}
+      MONGODB_URI: ${ORDER_MONGODB_URI:-mongodb://order-db:27017/orderdb}
+      # Service names, not localhost: Docker's DNS resolves them on campus-network
+      USER_SERVICE_URL: ${USER_SERVICE_URL:-http://user-service:3001}
+      PRODUCT_SERVICE_URL: ${PRODUCT_SERVICE_URL:-http://product-service:3002}
+      DEPENDENCY_TIMEOUT_MS: ${DEPENDENCY_TIMEOUT_MS:-3000}
+    # Only its own database is a startup dependency. User/Product are called at request
+    # time, and their absence is reported as 503 rather than preventing startup.
+    depends_on:
+      order-db:
+        condition: service_healthy
+    networks:
+      - campus-network
+    healthcheck:
+      test: wget -qO- http://localhost:${ORDER_SERVICE_PORT:-3003}/health || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+networks:
+  campus-network:
+    name: campus-network
+    driver: bridge
+
+volumes:
+  user-data:
+  product-data:
+  order-data:

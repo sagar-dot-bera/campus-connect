@@ -1,0 +1,16 @@
+{
+  "name": "product-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CampusConnect Product Service - owns Product resources",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.1.0",
+    "mongoose": "^9.9.5"
+  }
+}

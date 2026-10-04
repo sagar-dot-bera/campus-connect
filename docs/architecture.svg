@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" width="1000" height="720" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#15803d"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="720" fill="#ffffff"/>
+
+  <!-- Client -->
+  <rect x="380" y="20" width="240" height="54" rx="10" fill="#f1f5f9" stroke="#334155" stroke-width="2"/>
+  <text x="500" y="45" text-anchor="middle" font-size="17" font-weight="600" fill="#0f172a">Client / Postman</text>
+  <text x="500" y="64" text-anchor="middle" font-size="12" fill="#475569">(host machine)</text>
+
+  <!-- Gateway (conceptual) -->
+  <line x1="500" y1="74" x2="500" y2="106" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="320" y="108" width="360" height="50" rx="10" fill="#fafafa" stroke="#64748b" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="500" y="130" text-anchor="middle" font-size="15" font-weight="600" fill="#334155">API Gateway (optional)</text>
+  <text x="500" y="148" text-anchor="middle" font-size="11.5" fill="#64748b">conceptual only – not implemented in Lab 6</text>
+
+  <!-- Docker network boundary -->
+  <rect x="30" y="200" width="940" height="440" rx="16" fill="#eff6ff" stroke="#2563eb" stroke-width="2" stroke-dasharray="10 6"/>
+  <text x="50" y="226" font-size="14" font-weight="700" fill="#1d4ed8">Docker network: campus-network (bridge)</text>
+  <text x="50" y="244" font-size="11.5" fill="#1d4ed8">containers reach each other by Compose service name via Docker DNS</text>
+
+  <!-- Client -> services (host port mappings) -->
+  <line x1="410" y1="158" x2="175" y2="272" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="500" y1="158" x2="500" y2="272" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="590" y1="158" x2="825" y2="272" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="200" y="186" width="108" height="20" rx="4" fill="#fff"/>
+  <text x="254" y="200" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#0f172a">/users :3001</text>
+  <rect x="506" y="232" width="112" height="20" rx="4" fill="#fff"/>
+  <text x="562" y="246" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#0f172a">/orders :3003</text>
+  <rect x="688" y="186" width="126" height="20" rx="4" fill="#fff"/>
+  <text x="751" y="200" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#0f172a">/products :3002</text>
+
+  <!-- Services -->
+  <g>
+    <rect x="70" y="274" width="210" height="92" rx="12" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+    <text x="175" y="302" text-anchor="middle" font-size="17" font-weight="700" fill="#1e3a8a">User Service</text>
+    <text x="175" y="322" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#1e3a8a">user-service:3001</text>
+    <text x="175" y="342" text-anchor="middle" font-size="11.5" fill="#334155">CRUD /users</text>
+    <text x="175" y="358" text-anchor="middle" font-size="11" fill="#64748b">image user-service:v1</text>
+  </g>
+  <g>
+    <rect x="395" y="274" width="210" height="92" rx="12" fill="#ffedd5" stroke="#c2410c" stroke-width="2"/>
+    <text x="500" y="302" text-anchor="middle" font-size="17" font-weight="700" fill="#7c2d12">Order Service</text>
+    <text x="500" y="322" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#7c2d12">order-service:3003</text>
+    <text x="500" y="342" text-anchor="middle" font-size="11.5" fill="#334155">POST/GET /orders</text>
+    <text x="500" y="358" text-anchor="middle" font-size="11" fill="#64748b">image order-service:v1</text>
+  </g>
+  <g>
+    <rect x="720" y="274" width="210" height="92" rx="12" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+    <text x="825" y="302" text-anchor="middle" font-size="17" font-weight="700" fill="#1e3a8a">Product Service</text>
+    <text x="825" y="322" text-anchor="middle" font-size="12" font-family="Consolas, monospace" fill="#1e3a8a">product-service:3002</text>
+    <text x="825" y="342" text-anchor="middle" font-size="11.5" fill="#334155">CRUD /products</text>
+    <text x="825" y="358" text-anchor="middle" font-size="11" fill="#64748b">image product-service:v1</text>
+  </g>
+
+  <!-- Service-to-service REST calls -->
+  <line x1="395" y1="320" x2="284" y2="320" stroke="#c2410c" stroke-width="2.5" marker-end="url(#arrowOrange)"/>
+  <text x="340" y="384" text-anchor="middle" font-size="11.5" font-family="Consolas, monospace" fill="#c2410c">GET /users/{id}</text>
+  <text x="340" y="400" text-anchor="middle" font-size="10.5" fill="#c2410c">USER_SERVICE_URL</text>
+  <line x1="605" y1="320" x2="716" y2="320" stroke="#c2410c" stroke-width="2.5" marker-end="url(#arrowOrange)"/>
+  <text x="660" y="384" text-anchor="middle" font-size="11.5" font-family="Consolas, monospace" fill="#c2410c">GET /products/{id}</text>
+  <text x="660" y="400" text-anchor="middle" font-size="10.5" fill="#c2410c">PRODUCT_SERVICE_URL</text>
+
+  <!-- Service -> own DB -->
+  <line x1="175" y1="366" x2="175" y2="452" stroke="#15803d" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <line x1="500" y1="366" x2="500" y2="452" stroke="#15803d" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <line x1="825" y1="366" x2="825" y2="452" stroke="#15803d" stroke-width="2" marker-end="url(#arrowGreen)"/>
+
+  <!-- Databases (cylinders) -->
+  <g>
+    <path d="M95,466 a80,12 0 0,0 160,0 v62 a80,12 0 0,1 -160,0 z" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+    <ellipse cx="175" cy="466" rx="80" ry="12" fill="#bbf7d0" stroke="#15803d" stroke-width="2"/>
+    <text x="175" y="500" text-anchor="middle" font-size="15" font-weight="700" fill="#14532d">User DB</text>
+    <text x="175" y="518" text-anchor="middle" font-size="11.5" font-family="Consolas, monospace" fill="#14532d">user-db / userdb</text>
+    <text x="175" y="565" text-anchor="middle" font-size="11" fill="#475569">owned by User Service</text>
+    <text x="175" y="581" text-anchor="middle" font-size="11" fill="#475569">volume: user-data</text>
+  </g>
+  <g>
+    <path d="M420,466 a80,12 0 0,0 160,0 v62 a80,12 0 0,1 -160,0 z" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+    <ellipse cx="500" cy="466" rx="80" ry="12" fill="#bbf7d0" stroke="#15803d" stroke-width="2"/>
+    <text x="500" y="500" text-anchor="middle" font-size="15" font-weight="700" fill="#14532d">Order DB</text>
+    <text x="500" y="518" text-anchor="middle" font-size="11.5" font-family="Consolas, monospace" fill="#14532d">order-db / orderdb</text>
+    <text x="500" y="565" text-anchor="middle" font-size="11" fill="#475569">owned by Order Service</text>
+    <text x="500" y="581" text-anchor="middle" font-size="11" fill="#475569">volume: order-data</text>
+  </g>
+  <g>
+    <path d="M745,466 a80,12 0 0,0 160,0 v62 a80,12 0 0,1 -160,0 z" fill="#dcfce7" stroke="#15803d" stroke-width="2"/>
+    <ellipse cx="825" cy="466" rx="80" ry="12" fill="#bbf7d0" stroke="#15803d" stroke-width="2"/>
+    <text x="825" y="500" text-anchor="middle" font-size="15" font-weight="700" fill="#14532d">Product DB</text>
+    <text x="825" y="518" text-anchor="middle" font-size="11.5" font-family="Consolas, monospace" fill="#14532d">product-db / productdb</text>
+    <text x="825" y="565" text-anchor="middle" font-size="11" fill="#475569">owned by Product Service</text>
+    <text x="825" y="581" text-anchor="middle" font-size="11" fill="#475569">volume: product-data</text>
+  </g>
+
+  <text x="500" y="620" text-anchor="middle" font-size="12.5" fill="#1e293b">MongoDB containers (mongo:7) publish no host ports. Order Service never reads user-db or product-db directly; it uses REST only.</text>
+
+  <!-- Legend -->
+  <g font-size="12" fill="#334155">
+    <line x1="60" y1="676" x2="100" y2="676" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="108" y="680">client request (host port mapping)</text>
+    <line x1="360" y1="676" x2="400" y2="676" stroke="#c2410c" stroke-width="2.5" marker-end="url(#arrowOrange)"/>
+    <text x="408" y="680">service-to-service REST call</text>
+    <line x1="630" y1="676" x2="670" y2="676" stroke="#15803d" stroke-width="2" marker-end="url(#arrowGreen)"/>
+    <text x="678" y="680">service → its own database</text>
+  </g>
+</svg>

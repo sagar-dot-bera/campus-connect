@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" width="1000" height="800" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrowOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#15803d"/>
+    </marker>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="800" fill="#ffffff"/>
+
+  <!-- Internet zone -->
+  <text x="30" y="30" font-size="13" font-weight="700" fill="#64748b">INTERNET</text>
+
+  <!-- Client -->
+  <rect x="380" y="20" width="240" height="54" rx="10" fill="#f1f5f9" stroke="#334155" stroke-width="2"/>
+  <text x="500" y="45" text-anchor="middle" font-size="17" font-weight="600" fill="#0f172a">Client / Postman</text>
+  <text x="500" y="64" text-anchor="middle" font-size="12" fill="#475569">one address: {{gatewayUrl}}</text>
+
+  <line x1="500" y1="74" x2="500" y2="112" stroke="#334155" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="512" y="82" width="300" height="20" rx="4" fill="#fff"/>
+  <text x="518" y="96" font-size="11.5" fill="#334155">http://localhost:8080  |  https://&lt;gateway&gt;.onrender.com</text>
+
+  <!-- API Gateway -->
+  <rect x="300" y="114" width="400" height="118" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2.5"/>
+  <text x="500" y="140" text-anchor="middle" font-size="18" font-weight="700" fill="#4c1d95">API Gateway  (public)</text>
+  <text x="500" y="160" text-anchor="middle" font-size="12" fill="#5b21b6">Express 5 + http-proxy-middleware · only published port (8080)</text>
+  <text x="320" y="184" font-size="12" fill="#3b0764">• /users/* → user-service   • /products/* → product-service</text>
+  <text x="320" y="202" font-size="12" fill="#3b0764">• /orders/* → order-service  • GET /health, /health/services</text>
+  <text x="320" y="220" font-size="12" fill="#3b0764">• request logging  • 503 unreachable/timeout, 502 other, 404 no route</text>
+
+  <!-- Service registry -->
+  <rect x="740" y="114" width="230" height="118" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="855" y="138" text-anchor="middle" font-size="14" font-weight="700" fill="#9a3412">Service registry (config)</text>
+  <text x="752" y="160" font-size="11.5" fill="#7c2d12" font-family="Consolas, monospace">USER_SERVICE_URL</text>
+  <text x="752" y="178" font-size="11.5" fill="#7c2d12" font-family="Consolas, monospace">PRODUCT_SERVICE_URL</text>
+  <text x="752" y="196" font-size="11.5" fill="#7c2d12" font-family="Consolas, monospace">ORDER_SERVICE_URL</text>
+  <text x="752" y="220" font-size="11" fill="#9a3412">.env / compose · Render env vars</text>
+  <line x1="738" y1="173" x2="702" y2="173" stroke="#c2410c" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrowOrange)"/>
+  <text x="718" y="250" text-anchor="middle" font-size="11" fill="#9a3412">read at startup → routing table</text>
+
+  <!-- Docker network boundary -->
+  <rect x="30" y="280" width="940" height="290" rx="16" fill="#eff6ff" stroke="#2563eb" stroke-width="2" stroke-dasharray="10 6"/>
+  <text x="50" y="306" font-size="14" font-weight="700" fill="#1d4ed8">Docker network: campus-network  —  no published ports, reachable only via the gateway</text>
+  <text x="50" y="324" font-size="11.5" fill="#1d4ed8">containers reach each other by Compose service name via Docker DNS</text>
+
+  <!-- Gateway -> services -->
+  <line x1="390" y1="232" x2="175" y2="368" stroke="#7c3aed" stroke-width="2.2" marker-end="url(#arrowPurple)"/>
+  <line x1="500" y1="232" x2="500" y2="368" stroke="#7c3aed" stroke-width="2.2" marker-end="url(#arrowPurple)"/>
+  <line x1="610" y1="232" x2="825" y2="368" stroke="#7c3aed" stroke-width="2.2" marker-end="url(#arrowPurple)"/>
+  <rect x="222" y="338" width="60" height="18" rx="4" fill="#eff6ff"/>
+  <text x="252" y="351" text-anchor="middle" font-size="11.5" fill="#5b21b6">/users</text>
+  <rect x="508" y="336" width="82" height="18" rx="4" fill="#eff6ff"/>
+  <text x="549" y="349" text-anchor="middle" font-size="11.5" fill="#5b21b6">/products</text>
+  <rect x="712" y="338" width="62" height="18" rx="4" fill="#eff6ff"/>
+  <text x="743" y="351" text-anchor="middle" font-size="11.5" fill="#5b21b6">/orders</text>
+
+  <!-- Services -->
+  <rect x="70" y="370" width="210" height="88" rx="10" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="175" y="400" text-anchor="middle" font-size="16" font-weight="700" fill="#1e3a8a">User Service</text>
+  <text x="175" y="420" text-anchor="middle" font-size="12" fill="#1e40af">user-service:3001</text>
+  <text x="175" y="440" text-anchor="middle" font-size="11.5" fill="#1e40af">/users CRUD</text>
+
+  <rect x="395" y="370" width="210" height="88" rx="10" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="500" y="400" text-anchor="middle" font-size="16" font-weight="700" fill="#1e3a8a">Product Service</text>
+  <text x="500" y="420" text-anchor="middle" font-size="12" fill="#1e40af">product-service:3002</text>
+  <text x="500" y="440" text-anchor="middle" font-size="11.5" fill="#1e40af">/products CRUD</text>
+
+  <rect x="720" y="370" width="210" height="88" rx="10" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2"/>
+  <text x="825" y="400" text-anchor="middle" font-size="16" font-weight="700" fill="#1e3a8a">Order Service</text>
+  <text x="825" y="420" text-anchor="middle" font-size="12" fill="#1e40af">order-service:3003</text>
+  <text x="825" y="440" text-anchor="middle" font-size="11.5" fill="#1e40af">/orders · validates user + product</text>
+
+  <!-- Order -> User / Product -->
+  <path d="M 720 444 C 640 520, 360 520, 280 444" fill="none" stroke="#c2410c" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowOrange)"/>
+  <line x1="720" y1="414" x2="607" y2="414" stroke="#c2410c" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowOrange)"/>
+  <text x="515" y="552" font-size="11.5" fill="#9a3412">REST: GET /users/{id}, /products/{id}</text>
+
+  <!-- Services -> MongoDB -->
+  <line x1="175" y1="458" x2="235" y2="636" stroke="#15803d" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <line x1="500" y1="458" x2="500" y2="636" stroke="#15803d" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <line x1="825" y1="458" x2="765" y2="636" stroke="#15803d" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="512" y="600" font-size="11.5" fill="#166534">MONGODB_URI (per service)</text>
+
+  <!-- MongoDB -->
+  <rect x="150" y="638" width="700" height="120" rx="14" fill="#f0fdf4" stroke="#15803d" stroke-width="2"/>
+  <text x="500" y="664" text-anchor="middle" font-size="16" font-weight="700" fill="#14532d">MongoDB Atlas  (cloud)  —  database per service</text>
+  <rect x="180" y="678" width="190" height="40" rx="8" fill="#dcfce7" stroke="#15803d"/>
+  <text x="275" y="703" text-anchor="middle" font-size="13" fill="#14532d">userdb · users</text>
+  <rect x="405" y="678" width="190" height="40" rx="8" fill="#dcfce7" stroke="#15803d"/>
+  <text x="500" y="703" text-anchor="middle" font-size="13" fill="#14532d">productdb · products</text>
+  <rect x="630" y="678" width="190" height="40" rx="8" fill="#dcfce7" stroke="#15803d"/>
+  <text x="725" y="703" text-anchor="middle" font-size="13" fill="#14532d">orderdb · orders</text>
+  <text x="500" y="745" text-anchor="middle" font-size="11.5" fill="#166534">local dev default: one mongo:7 container per service (user-db / product-db / order-db) inside campus-network</text>
+</svg>
