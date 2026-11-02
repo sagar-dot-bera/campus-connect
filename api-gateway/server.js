@@ -5,12 +5,20 @@ const { routes, findRoute } = require('./src/config/routes');
 const { proxyTimeoutMs } = require('./src/config/gateway');
 const requestLogger = require('./src/middleware/requestLogger');
 const { createServiceProxy } = require('./src/proxy');
+const { client, metricsMiddleware } = require('./src/metrics');
 
 const app = express();
 const port = process.env.PORT || 8080;
 
 // No express.json() here: request bodies are streamed to the backend untouched.
 app.use(requestLogger);
+app.use(metricsMiddleware);
+
+// Prometheus metrics endpoint
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.register.contentType);
+  res.end(await client.register.metrics());
+});
 
 // The gateway's own health. Answers without contacting any backend.
 app.get('/health', (req, res) => {

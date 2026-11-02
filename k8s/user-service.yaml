@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# User Service — Service
+# Type : ClusterIP (internal only — reached via api-gateway and order-service)
+# The stable DNS name "user-service" is used by other services internally.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: lab8
+  labels:
+    app.kubernetes.io/name: user-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: campusconnect
+spec:
+  type: ClusterIP
+  selector:
+    app: user-service
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3001
+      targetPort: 3001

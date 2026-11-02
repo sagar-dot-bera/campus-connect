@@ -5,12 +5,20 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const connectDB = require('./src/config/db');
 const productRoutes = require('./src/routes/productRoutes');
+const { client, metricsMiddleware } = require('./src/metrics');
 
 const app = express();
 const port = process.env.PORT || 3002;
 
 app.use(cors());
 app.use(express.json());
+app.use(metricsMiddleware);
+
+// Prometheus metrics endpoint
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.register.contentType);
+  res.end(await client.register.metrics());
+});
 
 app.get('/health', (req, res) => {
   const dbUp = mongoose.connection.readyState === 1;

@@ -1,0 +1,21 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Product Service — Service (ClusterIP / internal)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: lab8
+  labels:
+    app.kubernetes.io/name: product-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: campusconnect
+spec:
+  type: ClusterIP
+  selector:
+    app: product-service
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3002
+      targetPort: 3002

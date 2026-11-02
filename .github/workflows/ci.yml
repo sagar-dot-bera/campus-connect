@@ -1,0 +1,209 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CampusConnect CI/CD Pipeline
+#
+# Trigger  : push or pull_request to main / master
+# Runner   : ubuntu-latest
+# Registry : Docker Hub  (docker.io/sagar9800/*)
+#
+# Stages
+# 1. build-test     — checkout, install deps, run tests for all services
+# 2. docker-build   — build & push versioned images (SHA tag + 'latest')
+# 3. k8s-deploy     — update Kubernetes Deployments to the new image SHA
+#
+# Required GitHub Secrets (Settings → Secrets → Actions):
+#   DOCKERHUB_USERNAME   — Docker Hub username  (sagar9800)
+#   DOCKERHUB_TOKEN      — Docker Hub access token (NOT your password)
+#   KUBE_CONFIG          — base64-encoded kubeconfig for the target cluster
+#   MONGODB_USER_URI     — MongoDB Atlas URI for user-service
+#   MONGODB_PRODUCT_URI  — MongoDB Atlas URI for product-service
+#   MONGODB_ORDER_URI    — MongoDB Atlas URI for order-service
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI/CD — CampusConnect Microservices
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+env:
+  REGISTRY: docker.io
+  DOCKERHUB_USERNAME: sagar9800
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # JOB 1 — Build & Test all services
+  # ═══════════════════════════════════════════════════════════════════════════
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [api-gateway, user-service, product-service, order-service]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: ${{ matrix.service }}/package-lock.json
+
+      - name: Install dependencies — ${{ matrix.service }}
+        working-directory: ${{ matrix.service }}
+        run: npm ci --omit=dev
+
+      # Tests: run 'npm test' if a test script exists, otherwise skip gracefully.
+      - name: Run tests — ${{ matrix.service }}
+        working-directory: ${{ matrix.service }}
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)" 2>/dev/null; then
+            npm test
+          else
+            echo "No test script defined in ${{ matrix.service }}/package.json — skipping."
+          fi
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # JOB 2 — Build & Push versioned Docker images to Docker Hub
+  # Runs only on push (not pull_request) and only after build-test succeeds.
+  # ═══════════════════════════════════════════════════════════════════════════
+  docker-build:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.event_name == 'push'
+
+    strategy:
+      matrix:
+        service: [api-gateway, user-service, product-service, order-service]
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Set up QEMU + Buildx for multi-platform support (optional but recommended)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Generate tags: short-SHA (traceable) + 'latest'
+      - name: Extract metadata for ${{ matrix.service }}
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/${{ matrix.service }}
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.service }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # JOB 3 — Update Kubernetes Deployments to the new image SHA
+  # Requires KUBE_CONFIG secret and runs only on push to default branch.
+  # ═══════════════════════════════════════════════════════════════════════════
+  k8s-deploy:
+    name: Kubernetes Rollout
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.event_name == 'push'
+
+    env:
+      IMAGE_TAG: sha-${{ github.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Write the kubeconfig from the secret so kubectl can authenticate
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      # Ensure the MongoDB Secret exists in lab8 (idempotent)
+      - name: Ensure MongoDB Secret exists in lab8
+        run: |
+          kubectl create secret generic mongodb-secret \
+            --from-literal=USER_MONGODB_URI="${{ secrets.MONGODB_USER_URI }}" \
+            --from-literal=PRODUCT_MONGODB_URI="${{ secrets.MONGODB_PRODUCT_URI }}" \
+            --from-literal=ORDER_MONGODB_URI="${{ secrets.MONGODB_ORDER_URI }}" \
+            --namespace lab8 \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # Apply all manifests (ConfigMap, Deployments, Services)
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/configmap.yaml          -n lab8
+          kubectl apply -f k8s/gateway-deployment.yaml -n lab8
+          kubectl apply -f k8s/gateway-service.yaml    -n lab8
+          kubectl apply -f k8s/user-deployment.yaml    -n lab8
+          kubectl apply -f k8s/user-service.yaml       -n lab8
+          kubectl apply -f k8s/product-deployment.yaml -n lab8
+          kubectl apply -f k8s/product-service.yaml    -n lab8
+          kubectl apply -f k8s/order-deployment.yaml   -n lab8
+          kubectl apply -f k8s/order-service.yaml      -n lab8
+
+      # Update each Deployment's image to the exact SHA tag produced in Job 2
+      - name: Roll out new image — api-gateway
+        run: |
+          kubectl set image deployment/api-gateway \
+            api-gateway=${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/api-gateway:sha-${{ github.sha }} \
+            -n lab8
+          kubectl rollout status deployment/api-gateway -n lab8 --timeout=120s
+
+      - name: Roll out new image — user-service
+        run: |
+          kubectl set image deployment/user-service \
+            user-service=${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/user-service:sha-${{ github.sha }} \
+            -n lab8
+          kubectl rollout status deployment/user-service -n lab8 --timeout=120s
+
+      - name: Roll out new image — product-service
+        run: |
+          kubectl set image deployment/product-service \
+            product-service=${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/product-service:sha-${{ github.sha }} \
+            -n lab8
+          kubectl rollout status deployment/product-service -n lab8 --timeout=120s
+
+      - name: Roll out new image — order-service
+        run: |
+          kubectl set image deployment/order-service \
+            order-service=${{ env.REGISTRY }}/${{ env.DOCKERHUB_USERNAME }}/order-service:sha-${{ github.sha }} \
+            -n lab8
+          kubectl rollout status deployment/order-service -n lab8 --timeout=120s
+
+      # Final verification — show all running Pods and Services
+      - name: Verify deployment
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods -n lab8
+          echo ""
+          echo "=== Deployments ==="
+          kubectl get deployments -n lab8
+          echo ""
+          echo "=== Services ==="
+          kubectl get services -n lab8

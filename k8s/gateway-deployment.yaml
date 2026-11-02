@@ -1,0 +1,96 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# API Gateway — Deployment
+# Image: docker.io/sagar9800/api-gateway:<tag>
+# Port : 8080
+# Health/Readiness probes: GET /health
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: lab8
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/component: gateway
+    app.kubernetes.io/part-of: campusconnect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+        app.kubernetes.io/name: api-gateway
+        app.kubernetes.io/component: gateway
+        app.kubernetes.io/part-of: campusconnect
+    spec:
+      containers:
+        - name: api-gateway
+          image: sagar9800/api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            # Non-sensitive values from ConfigMap
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: campusconnect-config
+                  key: GATEWAY_PORT
+            - name: USER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: campusconnect-config
+                  key: USER_SERVICE_URL
+            - name: PRODUCT_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: campusconnect-config
+                  key: PRODUCT_SERVICE_URL
+            - name: ORDER_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: campusconnect-config
+                  key: ORDER_SERVICE_URL
+            - name: GATEWAY_PROXY_TIMEOUT_MS
+              valueFrom:
+                configMapKeyRef:
+                  name: campusconnect-config
+                  key: GATEWAY_PROXY_TIMEOUT_MS
+          # ── Liveness Probe ────────────────────────────────────────────────
+          # Restarts the container if the gateway becomes unresponsive.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # ── Readiness Probe ───────────────────────────────────────────────
+          # Removes the Pod from the Service endpoint list until it is ready.
+          # Especially important during rolling updates.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
